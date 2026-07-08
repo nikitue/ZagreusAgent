@@ -1,0 +1,13 @@
+# Ignore the virtual environment
+venv/
+.venv/
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+
+# Ignore large media/model assets (keep your repo clean)
+assets/*.wav
+models/
+*.bin
+*.gguf
