@@ -42,7 +42,7 @@ def transcribe_audio(audio_data):
     segments, info = model.transcribe(
                     audio_data,
                     beam_size=5,
-                    initial_prompt="Zagreus, Hades, Underworld, Olympus, Agent, Assistant." # Understand easier the name Zagreus
+                    initial_prompt="Your name is Zagreus. Take a bit longer to end the sentence. Keywords: Hades, Underworld, Olympus, Agent, Assistant, Spotify, Google, Chrome, Browser." # Understand easier the name Zagreus
                     )
     
     # Combine the transcribed segments into a single string

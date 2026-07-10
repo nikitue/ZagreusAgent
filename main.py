@@ -1,8 +1,8 @@
 import gc
 import torch
-#from modules.stt import listen_to_user
+from modules.stt import record_audio, transcribe_audio
 from modules.llm import generate_response
-#from modules.tts import speak_text
+from modules.tts import speak_text
 
 def clear_vram():
     """
@@ -11,44 +11,56 @@ def clear_vram():
     gc.collect()
     torch.cuda.empty_cache()
     # Print VRAM usage to the console
-    allocated = torch.cuda.memory_allocated() / (1024 ** 3)
-    print(f"[Memory Monitor] VRAM currently in use: {allocated:.2f} GB")
+    #allocated = torch.cuda.memory_allocated() / (1024 ** 3)
+    #print(f"[Memory Monitor] VRAM currently in use: {allocated:.2f} GB")
 
 def main():
     print("Awakening Zagreus...")
-    
-    # STT runs on CPU, so it can stay loaded permanently
-    # without hurting the 6GB GPU limit.
-    
+
+    #Start clean
+    clear_vram()
+
     while True:
-        # Listen (CPU)
-        print("\nListening...")
-        user_text = listen_to_user() 
-        if not user_text:
-            continue
-            
-        if "sleep" in user_text.lower():
-            print("Zagreus: Returning to the House of Hades.")
+        try:
+            # Listen
+            print("\nListening...")
+            raw_audio = record_audio(duration=10)
+            user_text = transcribe_audio(raw_audio)
+                
+            # Whisper finishes, immediately sweep it out of VRAM
+            clear_vram() 
+            if not user_text:
+                continue
+
+            # If the microphone just heard background noise, skip the loop
+            if len(user_text) < 2:
+                continue
+
+            print(f"\nYou: \"{user_text}\"")
+                
+            # Secret kill-switch to exit the loop gracefully
+            if "sleep" in user_text.lower() or "goodbye" in user_text.lower():
+                print("Zagreus: Returning to the House of Hades.")
+                break
+                
+            # Think (GPU)
+            print("Zagreus is thinking...")
+            response_text = generate_response(user_text)
+                
+            print(f"Zagreus: {response_text}") 
+            clear_vram() # Just to be safe (keep_alive=0 is enough)
+
+            # Speak (GPU)
+            # We instantiate F5-TTS, generate audio, and play it
+            speak_text(response_text)
+            clear_vram()
+        except KeyboardInterrupt:
+            # Allows you to press Ctrl+C in the terminal to safely exit
+            print("\n[System] Shutting down Zagreus...")
             break
-
-        # Think (GPU)
-        print("Zagreus is thinking...")
-        # We instantiate the model, get the text, and return ONLY the text
-        # response_text = generate_response(user_text)
-        response_text = f"You just said: {user_text}"
-        
-        # CLEAR VRAM: Destroy the LLM from GPU memory
-        clear_vram() 
-
-        # Speak (GPU)
-        print(f"Zagreus: {response_text}")
-        # We instantiate F5-TTS, generate audio, and play it
-        speak_text(response_text)
-        
-        # CLEAR VRAM: Destroy the TTS model from GPU memory
-        clear_vram()
+        except Exception as e:
+            print(f"\n[System Error]: {e}")
+            clear_vram()
 
 if __name__ == "__main__":
-    print("Testing the Brain...")
-    answer = generate_response("Hey Zag, how is the underworld treating you today?")
-    print(f"\nZagreus says: {answer}")
+    main()
