@@ -1,6 +1,6 @@
-torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 faster-whisper
 llama-cpp-python
 f5-tts
 sounddevice
 numpy
+requests
